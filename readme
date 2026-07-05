@@ -1,0 +1,39 @@
+#  Evidencia de Entrega: Clasificación de Desempeño Académico
+
+Este apartado documenta el cumplimiento de los requisitos establecidos para el reto de clasificación académica mediante funciones definidas por el usuario (UDF) en MySQL.
+
+---
+
+## 1. Nombre de la Función SQL
+La función solicitada fue implementada bajo el estándar técnico requerido y se encuentra registrada en el script adjunto con el nombre exacto de:
+* **`ClasificarDesempeño`**
+
+---
+
+##  2. Uso de la Función en Consulta `SELECT`
+Para proyectar los resultados del negocio, la función se integra directamente en una sentencia de selección. Esto permite calcular dinámicamente el rendimiento sin necesidad de almacenar datos redundantes en las tablas físicas. 
+
+La sintaxis empleada realiza el llamado de la función pasando como argumento el identificador único del estudiante (`id_estudiante`), lo que genera un reporte limpio con el **ID del estudiante, su nombre y su clasificación final**.
+
+---
+
+##  3. Evidencia de la Lógica Condicional (Capturas de Pantalla)
+
+Para demostrar que la estructura condicional (`CASE / WHEN`) evalúa correctamente los límites establecidos, se diseñó un set de datos de prueba que abarca todos los umbrales de la regla de negocio, incluyendo un caso borde (estudiante sin calificaciones registradas).
+
+###  Evidencia del Script Completo Ejecutado
+Ejecución del Script de Base de Datos --> https://ibb.co/3mzsKhq1
+
+###  Evidencia de la Tabla de Resultados (Result Grid)
+Resultados de la Clasificación --> https://ibb.co/1GTcF2qv
+
+
+## 🧠 4. Justificación Técnica: DETERMINISTIC vs NOT DETERMINISTIC
+
+La función `ClasificarDesempeño` se ha declarado formal y explícitamente como **`DETERMINISTIC`** (Determinista) debido a los siguientes argumentos de arquitectura de bases de datos:
+
+1.  **Consistencia Predictiva (Teorema de Determinismo):** Una función es determinista si, para un valor de entrada específico (en este caso, un `id_estudiante` particular), la función **siempre producirá exactamente el mismo resultado de salida**, siempre y cuando el estado de las tablas en la base de datos no haya cambiado.
+
+2.  **Ausencia de Volatilidad Externa:** El algoritmo interno se apoya puramente en los datos estructurados de la tabla `notas`. No invoca ni consume funciones del sistema operacional o funciones de tiempo inherentemente no deterministas como `NOW()`, `CURDATE()`, `RAND()` o `UUID()`, cuyos valores varían en cada milisegundo de ejecución independientemente de los parámetros de entrada.
+
+3.  **Optimización del Motor de Consultas (Performance):** Al marcar la función como `DETERMINISTIC` (en combinación con la cláusula `READS SQL DATA`), se le comunica al optimizador de consultas de MySQL que es completamente seguro almacenar los resultados en la memoria caché del servidor (*Result Cache*). Si la consulta procesa miles de registros y encuentra IDs repetidos, el motor reutilizará el resultado previamente calculado en lugar de volver a ejecutar todo el proceso analítico y de agregación (`AVG`), reduciendo drásticamente el consumo de CPU y tiempos de respuesta E/S (Entrada/Salida).
